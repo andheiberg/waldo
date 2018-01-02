@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers;
+namespace Waldo\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
