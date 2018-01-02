@@ -25,6 +25,11 @@ class BranchesController extends Controller
     {
         $branches = $this->branches->all();
         $branch = $this->branches->find($branchId);
+
+        if (! $branch) {
+            abort(404);
+        }
+
         $commit = $branch->commits()->orderBy('updated_at', 'desc')->first();
         $screenshots = $commit->screenshots;
 

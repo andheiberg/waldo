@@ -37,6 +37,10 @@ class ScreenshotsController extends Controller
         $branch = $this->branches->find($branchId);
         $screenshot = $this->screenshots->find($screenshotId);
 
+        if (! $branch or ! $screenshot) {
+            abort(404);
+        }
+
         return view('screenshots.show', compact('branch', 'screenshot'));
     }
 }
