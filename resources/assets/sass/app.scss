@@ -1,9 +1,20 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,900,300);
 
-// Fonts
-@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
+@import "vendor/bootstrap";
 
-// Variables
-@import "variables";
+img {
+  max-width: 100%;
+}
 
-// Bootstrap
-@import "~bootstrap-sass/assets/stylesheets/bootstrap";
+.navbar-brand img {
+  max-width: 38px;
+  margin-top: -9px;
+  display: block;
+  float: left;
+}
+
+.navbar-brand span {
+  display: block;
+  float: left;
+  margin-left: 1em;
+}

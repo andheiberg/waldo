@@ -11,6 +11,12 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', ['as' => 'home', 'uses' => 'HomeController@index']);
+
+Route::get('settings', ['as' => 'settings', 'uses' => 'SettingsController@index']);
+Route::put('settings', ['as' => 'settings.update', 'uses' => 'SettingsController@update']);
+Route::delete('settings/delete/all', ['as' => 'settings.delete.all', 'uses' => 'SettingsController@deleteAll']);
+Route::delete('settings/delete/old', ['as' => 'settings.delete.old', 'uses' => 'SettingsController@deleteOld']);
+
+Route::resource('branches', 'BranchesController', ['only' => ['show']]);
+Route::resource('branches/{branch}/screenshots', 'ScreenshotsController', ['only' => ['show']]);
