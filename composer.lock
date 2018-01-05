@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/andheiberg/laravel-theme.git",
-                "reference": "60467df3e8f842180492d620f6dda8fe9a64d241"
+                "reference": "84bfa71380bf4cfa0b37564b001db08fa7f8600e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andheiberg/laravel-theme/zipball/60467df3e8f842180492d620f6dda8fe9a64d241",
-                "reference": "60467df3e8f842180492d620f6dda8fe9a64d241",
+                "url": "https://api.github.com/repos/andheiberg/laravel-theme/zipball/84bfa71380bf4cfa0b37564b001db08fa7f8600e",
+                "reference": "84bfa71380bf4cfa0b37564b001db08fa7f8600e",
                 "shasum": ""
             },
             "require": {
@@ -44,7 +44,7 @@
                 }
             ],
             "description": "A modular themeing system based on the blade syntax.",
-            "time": "2018-01-02T20:43:13+00:00"
+            "time": "2018-01-02T21:12:42+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",
