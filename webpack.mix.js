@@ -11,11 +11,12 @@ let mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/assets/js/app.js', 'public/js')
-   .sass('resources/assets/sass/app.scss', 'public/css')
-   .copy('resources/assets/images', 'public/images')
-   .copy('resources/assets/fonts', 'public/fonts')
-   .version([
-        'public/css/app.css',
-        'public/js/app.js'
+mix.setPublicPath('web')
+    .js('resources/assets/js/app.js', 'js')
+    .sass('resources/assets/sass/app.scss', 'css')
+    .copy('resources/assets/images', 'web/images')
+    .copy('resources/assets/fonts', 'web/fonts')
+    .version([
+        'web/css/app.css',
+        'web/js/app.js'
     ]);
