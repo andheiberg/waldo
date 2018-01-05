@@ -11,6 +11,10 @@
 |
 */
 
+Route::get('check-alive', function () {
+    return response('', 204);
+});
+
 Route::get('/', ['as' => 'home', 'uses' => 'HomeController@index']);
 
 Route::get('settings', ['as' => 'settings', 'uses' => 'SettingsController@index']);
