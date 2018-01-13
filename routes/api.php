@@ -13,11 +13,7 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-Route::middleware('auth:api')->namespace('API')->group(function () {
+Route::namespace('API')->group(function () {
     Route::resource('branches', 'BranchesController', ['only' => ['index', 'show']]);
     Route::resource('commits', 'CommitsController', ['only' => ['index', 'show']]);
     Route::resource('screenshots', 'ScreenshotsController', ['only' => ['index', 'show', 'store']]);

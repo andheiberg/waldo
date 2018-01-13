@@ -6,6 +6,7 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\ImageManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Waldo\Branch;
@@ -55,8 +56,7 @@ class ScreenshotsController extends Controller
         Screenshot $screenshots,
         FilesystemManager $filesystemManager,
         Str $str
-    )
-    {
+    ) {
         $this->branches = $branches;
         $this->commits = $commits;
         $this->screenshots = $screenshots;
@@ -82,73 +82,83 @@ class ScreenshotsController extends Controller
 
     public function store(Request $request)
     {
-        $this->validate($request, [
-            'screenshot' => 'required|file',
-            'branch'     => 'required|string',
-            'commit'     => 'required|string',
-            'suite'      => 'string',
-            'feature'    => 'required|string',
-            'scenario'   => 'string',
-            'step'       => 'required|string',
-            'env'        => 'string',
-            'user_agent' => 'string',
-            'screen'     => 'string',
-            'touch'      => 'string'
-        ]);
+        try {
+            $this->validate($request, [
+                'screenshot' => 'required|file',
+                'branch'     => 'required|string',
+                'commit'     => 'required|string',
+                'suite'      => 'required|string',
+                'feature'    => 'required|string',
+                'scenario'   => 'required|string',
+                'step'       => 'required|string',
+                'env'        => 'required|string',
+                'user_agent' => 'string|nullable',
+                'screen'     => 'string|nullable',
+                'touch'      => 'boolean'
+            ]);
 
-        $file = $request->files->get('screenshot');
-        $branch = $request->get('branch');
-        $commit = $request->get('commit');
-        $suite = $request->get('suite', 'default');
-        $feature = $request->get('feature');
-        $scenario = $request->get('scenario');
-        $step = $request->get('step');
-        $env = $request->get('env');
-        $userAgent = $request->get('user_agent');
-        $screen = $request->get('screen');
-        $touch = $request->get('touch');
+            $file = $request->files->get('screenshot');
+            $branch = $request->get('branch');
+            $commit = $request->get('commit');
+            $suite = $request->get('suite', 'default');
+            $feature = $request->get('feature');
+            $scenario = $request->get('scenario');
+            $step = $request->get('step');
+            $env = $request->get('env');
+            $userAgent = $request->get('user_agent');
+            $screen = $request->get('screen');
+            $touch = $request->get('touch');
 
-        $id = sha1($branch.$commit.$env.$suite.$feature.$scenario.$step.$userAgent.$screen.$touch);
-        $filename = "/{$this->str->slug($branch)}/{$this->str->slug($commit)}/".$id;
-        $filename .= '.'.$file->getClientOriginalExtension();
+            $id = sha1($branch.$commit.$env.$suite.$feature.$scenario.$step.$userAgent.$screen.$touch);
+            $filename = "/{$this->str->slug($branch)}/{$this->str->slug($commit)}/".$id;
+            $filename .= '.'.$file->getClientOriginalExtension();
 
-        $this->filesystem->put($filename, file_get_contents($file));
+            $this->filesystem->put($filename, file_get_contents($file));
 
-        $branch = $this->branches->firstOrCreate(['name' => $branch]);
-        $commit = $this->commits->firstOrCreate(['hash' => $commit, 'branch_id' => $branch->id]);
-        $screenshot = $this->screenshots->updateOrCreate([
-            'id' => $id,
-            'branch_id' => $branch->id
-        ], [
-            'commit_id' => $commit->id,
-            'suite' => $suite,
-            'feature' => $feature,
-            'scenario' => $scenario,
-            'step' => $step,
-            'user_agent' => $userAgent,
-            'screen' => $screen,
-            'touch' => $touch,
-            'env' => $env
-        ]);
-        
-        $diff = $this->compare($screenshot);
+            $branch = $this->branches->firstOrCreate(['name' => $branch]);
+            $commit = $this->commits->firstOrCreate(['hash' => $commit, 'branch_id' => $branch->id]);
+            $screenshot = $this->screenshots->updateOrCreate([
+                'id' => $id,
+                'branch_id' => $branch->id
+            ], [
+                'commit_id' => $commit->id,
+                'suite' => $suite,
+                'feature' => $feature,
+                'scenario' => $scenario,
+                'step' => $step,
+                'user_agent' => $userAgent,
+                'screen' => $screen,
+                'touch' => $touch,
+                'env' => $env
+            ]);
 
-        $screenshot->update([
-            'score' => $diff['score'],
-            'base_line_id' => $diff['base_line_id'],
-            'diff_path' => $diff['diff_path']
-        ]);
+            $diff = $this->compare($screenshot);
 
-        return [
-            'id' => $screenshot->id,
-            'score' => $diff['score'],
-            'url' => 'http://localhost:8080/screenshots/'.$screenshot->id
-        ];
+            $screenshot->update([
+                'score' => $diff['score'],
+                'base_line_id' => $diff['base_line_id'],
+                'diff_path' => $diff['diff_path']
+            ]);
+
+            return [
+                'id' => $screenshot->id,
+                'score' => $diff['score'],
+                'url' => 'http://localhost:8080/screenshots/'.$screenshot->id
+            ];
+        } catch (ValidationException $e) {
+            $errors = json_encode($e->errors());
+            return response("Invalid data ($errors)", 400);
+        }
     }
 
     public function compare(Screenshot $screenshot)
     {
         $prodBranch = $this->branches->where('name', 'master')->first();
+
+        if (! $prodBranch) {
+            throw new ComparisonImageNotFoundException;
+        }
+
         $production = $this->screenshots->where('branch_id', $prodBranch->id)
             ->where('suite', $screenshot->suite)
             ->where('feature', $screenshot->feature)
