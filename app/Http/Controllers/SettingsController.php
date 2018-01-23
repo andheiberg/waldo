@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Waldo\Branch;
 use Waldo\Screenshot;
+use Waldo\Setting;
 
 class SettingsController extends Controller
 {
@@ -20,18 +21,25 @@ class SettingsController extends Controller
     private $screenshots;
 
     /**
+     * @var Setting
+     */
+    private $settings;
+
+    /**
      * HomeController constructor.
      *
      * @param Branch     $branches
      * @param Screenshot $screenshots
+     * @param Setting    $settings
      */
     public function __construct(
         Branch $branches,
-        Screenshot $screenshots
-    )
-    {
+        Screenshot $screenshots,
+        Setting $settings
+    ) {
         $this->branches = $branches;
         $this->screenshots = $screenshots;
+        $this->settings = $settings;
     }
 
     public function index()
@@ -43,8 +51,15 @@ class SettingsController extends Controller
     
     public function update(Request $request)
     {
-        $request->get('branch');
-        $request->get('env');
+        $branch = $this->settings->find('branch');
+        $branch->update([
+            'value' => $request->get('branch')
+        ]);
+
+        $env = $this->settings->find('env');
+        $env->update([
+            'value' => $request->get('env')
+        ]);
         
         return redirect('settings');
     }
