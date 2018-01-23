@@ -12,8 +12,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Waldo\Branch;
 use Waldo\Commit;
 use Waldo\Screenshot;
-use Waldo\Setting;
 use Waldo\Exceptions\ComparisonImageNotFoundException;
+use Waldo\Services\ScreenshotComparer;
 
 class ScreenshotsController extends Controller
 {
@@ -33,11 +33,6 @@ class ScreenshotsController extends Controller
     private $screenshots;
 
     /**
-     * @var Setting
-     */
-    private $settings;
-
-    /**
      * @var Filesystem
      */
     private $filesystem;
@@ -48,29 +43,34 @@ class ScreenshotsController extends Controller
     private $str;
 
     /**
+     * @var ScreenshotComparer
+     */
+    private $screenshotComparer;
+
+    /**
      * Create a new controller instance.
      *
-     * @param Branch            $branches
-     * @param Commit            $commits
-     * @param Screenshot        $screenshots
-     * @param Setting.          $settings
-     * @param FilesystemManager $filesystemManager
-     * @param Str               $str
+     * @param Branch             $branches
+     * @param Commit             $commits
+     * @param Screenshot         $screenshots
+     * @param FilesystemManager  $filesystemManager
+     * @param Str                $str
+     * @param ScreenshotComparer $screenshotComparer
      */
     public function __construct(
         Branch $branches,
         Commit $commits,
         Screenshot $screenshots,
-        Setting $settings,
         FilesystemManager $filesystemManager,
-        Str $str
+        Str $str,
+        ScreenshotComparer $screenshotComparer
     ) {
         $this->branches = $branches;
         $this->commits = $commits;
         $this->screenshots = $screenshots;
-        $this->settings = $settings;
         $this->filesystem = $filesystemManager->drive('public');
         $this->str = $str;
+        $this->screenshotComparer = $screenshotComparer;
     }
 
     public function index()
@@ -87,7 +87,7 @@ class ScreenshotsController extends Controller
         }
 
         if ($screenshot->score == NULL) {
-            $diff = $this->compare($screenshot);
+            $diff = $this->screenshotComparer->compare($screenshot);
 
             $screenshot->update([
                 'score' => $diff['score'],
@@ -159,48 +159,5 @@ class ScreenshotsController extends Controller
             $errors = json_encode($e->errors());
             return response("Invalid data ($errors)", 400);
         }
-    }
-
-    public function compare(Screenshot $screenshot)
-    {
-        $prodBranch = $this->branches->where(
-            'name', $settings->find('branch')->branch
-        )->first();
-
-        if (! $prodBranch) {
-            throw new ComparisonImageNotFoundException;
-        }
-
-        $production = $this->screenshots->where('branch_id', $prodBranch->id)
-            ->where('suite', $screenshot->suite)
-            ->where('feature', $screenshot->feature)
-            ->where('scenario', $screenshot->scenario)
-            ->where('step', $screenshot->step)
-            ->where('screen', $screenshot->screen)
-            ->where('touch', $screenshot->touch)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if (! $production) {
-            throw new ComparisonImageNotFoundException;
-        }
-        
-        $diffPath = str_replace('.png', '_diff.png', $screenshot->getPath());
-        $baseLine = $this->filesystem->get($production->getPath());
-        $screenshot = $this->filesystem->get($screenshot->getPath());
-
-        $manager = new ImageManager(['driver' => 'imagick']);
-        $screenshot = $manager->make($screenshot);
-        $baseLine = $manager->make($baseLine);
-
-        $compare = $baseLine->compare($screenshot);
-
-        $this->filesystem->put($diffPath, $compare[0]->encode('png'));
-
-        return [
-            'score' => $compare[1],
-            'base_line_id' => $production->id,
-            'diff_path' => $diffPath
-        ];
     }
 }
