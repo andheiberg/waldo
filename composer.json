@@ -4,13 +4,19 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "type": "project",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/andheiberg/image"
+        }
+    ],
     "require": {
         "php": ">=7.0.0",
         "fideloper/proxy": "~3.3",
         "laravel/framework": "5.5.*",
         "laravel/tinker": "~1.0",
         "andheiberg/theme": "^4.0",
-        "intervention/image": "^2.4"
+        "intervention/image": "dev-master"
     },
     "require-dev": {
         "filp/whoops": "~2.0",
