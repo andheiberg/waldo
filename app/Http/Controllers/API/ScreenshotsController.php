@@ -11,16 +11,12 @@ use Intervention\Image\ImageManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Waldo\Branch;
 use Waldo\Commit;
-use Waldo\Exceptions\ComparisonImageNotFoundException;
 use Waldo\Screenshot;
+use Waldo\Setting;
+use Waldo\Exceptions\ComparisonImageNotFoundException;
 
 class ScreenshotsController extends Controller
 {
-    /**
-     * @var Screenshot
-     */
-    private $screenshots;
-
     /**
      * @var Branch
      */
@@ -30,6 +26,16 @@ class ScreenshotsController extends Controller
      * @var Commit
      */
     private $commits;
+
+    /**
+     * @var Screenshot
+     */
+    private $screenshots;
+
+    /**
+     * @var Setting
+     */
+    private $settings;
 
     /**
      * @var Filesystem
@@ -47,6 +53,7 @@ class ScreenshotsController extends Controller
      * @param Branch            $branches
      * @param Commit            $commits
      * @param Screenshot        $screenshots
+     * @param Setting.          $settings
      * @param FilesystemManager $filesystemManager
      * @param Str               $str
      */
@@ -54,12 +61,14 @@ class ScreenshotsController extends Controller
         Branch $branches,
         Commit $commits,
         Screenshot $screenshots,
+        Setting $settings,
         FilesystemManager $filesystemManager,
         Str $str
     ) {
         $this->branches = $branches;
         $this->commits = $commits;
         $this->screenshots = $screenshots;
+        $this->settings = $settings;
         $this->filesystem = $filesystemManager->drive('public');
         $this->str = $str;
     }
@@ -75,6 +84,16 @@ class ScreenshotsController extends Controller
 
         if (! $screenshot) {
             throw new NotFoundHttpException;
+        }
+
+        if ($screenshot->score == NULL) {
+            $diff = $this->compare($screenshot);
+
+            $screenshot->update([
+                'score' => $diff['score'],
+                'base_line_id' => $diff['base_line_id'],
+                'diff_path' => $diff['diff_path']
+            ]);
         }
 
         return $screenshot;
@@ -132,17 +151,8 @@ class ScreenshotsController extends Controller
                 'env' => $env
             ]);
 
-            $diff = $this->compare($screenshot);
-
-            $screenshot->update([
-                'score' => $diff['score'],
-                'base_line_id' => $diff['base_line_id'],
-                'diff_path' => $diff['diff_path']
-            ]);
-
             return [
                 'id' => $screenshot->id,
-                'score' => $diff['score'],
                 'url' => 'http://localhost:8080/screenshots/'.$screenshot->id
             ];
         } catch (ValidationException $e) {

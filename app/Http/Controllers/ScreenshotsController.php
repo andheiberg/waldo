@@ -26,8 +26,7 @@ class ScreenshotsController extends Controller
     public function __construct(
         Branch $branches,
         Screenshot $screenshots
-    )
-    {
+    ) {
         $this->branches = $branches;
         $this->screenshots = $screenshots;
     }
