@@ -153,7 +153,9 @@ class ScreenshotsController extends Controller
 
     public function compare(Screenshot $screenshot)
     {
-        $prodBranch = $this->branches->where('name', 'master')->first();
+        $prodBranch = $this->branches->where(
+            'name', $settings->find('branch')->branch
+        )->first();
 
         if (! $prodBranch) {
             throw new ComparisonImageNotFoundException;
